@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -57,7 +58,7 @@ class FloatingPanelService : Service() {
     }
 
     private fun showOverlay() {
-        val b = OverlayPanelBinding.inflate(layoutInflater)
+        val b = OverlayPanelBinding.inflate(LayoutInflater.from(this))
         binding = b
         val type = if (Build.VERSION.SDK_INT >= 26)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
