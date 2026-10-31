@@ -7,6 +7,7 @@ import android.os.Looper
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -57,12 +58,14 @@ class HandTrackingManager(
     private var lastSwipeTime = 0L
     private var lastTwoHandDist = 0f
     private var lastExpandTime = 0L
+    @Volatile private var stopped = false
 
     fun modelExists(): Boolean = try {
         context.assets.open(MODEL_PATH).close(); true
     } catch (e: Exception) { false }
 
     fun start(previewView: PreviewView, lifecycleOwner: LifecycleOwner) {
+        if (stopped) return
         if (!modelExists()) {
             listener.onUnavailable(
                 "HAND TRACKING OFFLINE — gesture_recognizer.task not found in assets. " +
@@ -77,7 +80,7 @@ class HandTrackingManager(
                 .setMinHandDetectionConfidence(0.6f)
                 .setMinTrackingConfidence(0.5f)
                 .setRunningMode(RunningMode.LIVE_STREAM)
-                .setResultListener(this::onResults)
+                .setResultListener { result, _ -> onResults(result) }
                 .setErrorListener { e -> postUnavailable("Hand tracker error: ${e.message}") }
                 .build()
             recognizer = GestureRecognizer.createFromOptions(context, options)
@@ -85,6 +88,7 @@ class HandTrackingManager(
             val future = ProcessCameraProvider.getInstance(context)
             future.addListener({
                 val provider = future.get()
+                if (stopped) return@addListener
                 cameraProvider = provider
                 val preview = Preview.Builder().build()
                     .also { it.setSurfaceProvider(previewView.surfaceProvider) }
@@ -92,9 +96,19 @@ class HandTrackingManager(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                 analysis.setAnalyzer(executor) { proxy ->
-                    val image = BitmapImageBuilder(proxy).build()
-                    recognizer?.recognizeAsync(image, proxy.imageInfo.timestamp)
-                    proxy.close()
+                    try {
+                        val bitmap = proxy.toBitmap()
+                        val image = BitmapImageBuilder(bitmap).build()
+                        val processingOptions = ImageProcessingOptions.builder()
+                            .setRotationDegrees(proxy.imageInfo.rotationDegrees)
+                            .build()
+                        val timestampMs = proxy.imageInfo.timestamp / 1_000_000L
+                        recognizer?.recognizeAsync(image, processingOptions, timestampMs)
+                    } catch (t: Throwable) {
+                        postUnavailable("Camera frame processing failed: ${t.message}")
+                    } finally {
+                        proxy.close()
+                    }
                 }
                 provider.unbindAll()
                 provider.bindToLifecycle(
@@ -106,14 +120,18 @@ class HandTrackingManager(
     }
 
     fun stop() {
-        cameraProvider?.unbindAll(); cameraProvider = null
-        recognizer?.close(); recognizer = null
-        executor.shutdown()
+        stopped = true
+        cameraProvider?.unbindAll()
+        cameraProvider = null
+        try { recognizer?.close() } catch (_: Exception) { }
+        recognizer = null
+        if (!executor.isShutdown) executor.shutdown()
     }
 
     // ---------------- gesture heuristics ----------------
 
     private fun onResults(result: GestureRecognizerResult) {
+        if (stopped) return
         val hands = result.landmarks()
         if (hands.isEmpty()) { reset(); return }
         val now = System.currentTimeMillis()

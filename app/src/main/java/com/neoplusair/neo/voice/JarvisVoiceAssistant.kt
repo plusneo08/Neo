@@ -40,8 +40,14 @@ class JarvisVoiceAssistant(
             listener.onState(State.IDLE)
             return
         }
+        if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+            isListening = false
+            listener.onState(State.IDLE)
+            return
+        }
         isListening = true
         if (recognizer == null) recognizer = createRecognizer()
+        handler.removeCallbacks(restartRunnable)
         listener.onState(State.LISTENING)
         startListening()
     }
@@ -69,7 +75,11 @@ class JarvisVoiceAssistant(
                 override fun onBufferReceived(buffer: ByteArray?) {}
                 override fun onEndOfSpeech() { listener.onState(State.PROCESSING) }
                 override fun onError(error: Int) {
-                    if (isListening) handler.postDelayed(restartRunnable, 500)
+                    if (isListening) {
+                        listener.onState(State.LISTENING)
+                        handler.removeCallbacks(restartRunnable)
+                        handler.postDelayed(restartRunnable, if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY) 900 else 600)
+                    } else listener.onState(State.IDLE)
                 }
                 override fun onResults(results: Bundle?) {
                     val text = results
@@ -94,6 +104,13 @@ class JarvisVoiceAssistant(
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1200)
         }
-        try { recognizer?.startListening(intent) } catch (e: Exception) { /* ignored */ }
+        try {
+            recognizer?.startListening(intent)
+        } catch (_: IllegalStateException) {
+            if (isListening) handler.postDelayed(restartRunnable, 800)
+        } catch (_: SecurityException) {
+            isListening = false
+            listener.onState(State.IDLE)
+        }
     }
 }

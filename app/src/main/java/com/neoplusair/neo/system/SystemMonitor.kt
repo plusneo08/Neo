@@ -23,7 +23,8 @@ object SystemMonitor {
     )
 
     fun battery(context: Context): Battery {
-        val i = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))!!
+        val i = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            ?: return Battery(-1, false, 0f, 0, "UNKNOWN")
         val level = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = i.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         val pct = if (level >= 0 && scale > 0) (level * 100 / scale) else -1
@@ -67,9 +68,9 @@ object SystemMonitor {
 
     fun memorySummary(context: Context): String {
         val (avail, total) = ram(context)
-        val usedPct = ((total - avail) * 100 / total).toInt()
+        val usedPct = if (total > 0) ((total - avail) * 100 / total).toInt() else 0
         val (used, totalS, _) = storage()
-        val storagePct = (used * 100 / totalS).toInt()
+        val storagePct = if (totalS > 0) (used * 100 / totalS).toInt() else 0
         return "Neural memory at $usedPct percent capacity. " +
                "Archive storage at $storagePct percent utilization, sir."
     }
@@ -102,8 +103,6 @@ object SystemMonitor {
         }
     }
 
-    fun getBrightness(context: Int): Int = 128 // placeholder never used
-
     fun getBrightness(context: Context): Int =
         Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, 128)
 
@@ -120,9 +119,9 @@ object SystemMonitor {
     fun summary(context: Context): String {
         val b = battery(context)
         val (avail, total) = ram(context)
-        val ramPct = ((total - avail) * 100 / total).toInt()
+        val ramPct = if (total > 0) ((total - avail) * 100 / total).toInt() else 0
         val (used, totalS, _) = storage()
-        val storPct = (used * 100 / totalS).toInt()
+        val storPct = if (totalS > 0) (used * 100 / totalS).toInt() else 0
         return buildString {
             append("POWER ......... ${b.levelPercent}% ${if (b.charging) "⚡CHRG" else "BATT"}\n")
             append("NEURAL RAM .... $ramPct% USED\n")

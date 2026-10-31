@@ -22,14 +22,16 @@ class InstalledAppsRepository(context: Context) {
 
     private fun load(): List<AppInfo> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return pm.queryIntentActivities(intent, 0)
-            .map { resolve ->
+        return pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .mapNotNull { resolve ->
+                val packageName = resolve.activityInfo?.packageName ?: return@mapNotNull null
+                val launchIntent = pm.getLaunchIntentForPackage(packageName)
+                    ?: return@mapNotNull null
                 AppInfo(
                     label = resolve.loadLabel(pm).toString(),
-                    packageName = resolve.activityInfo.packageName,
+                    packageName = packageName,
                     icon = resolve.loadIcon(pm),
-                    launchIntent = pm.getLaunchIntentForPackage(resolve.activityInfo.packageName)!!
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    launchIntent = launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
             }
             .distinctBy { it.packageName }

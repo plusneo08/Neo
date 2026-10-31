@@ -1,25 +1,21 @@
-
 package com.neoplusair.neo.ui
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.neoplusair.neo.MainActivity
 import com.neoplusair.neo.databinding.FragmentGestureBinding
 import com.neoplusair.neo.gesture.HandTrackingManager
 import com.neoplusair.neo.services.FloatingPanelService
+import android.content.Intent
 
-/**
- * Air-gesture control link. Hand tracking via MediaPipe; if the model is
- * absent or the camera is denied, voice + touch remain fully operational.
- */
+/** Camera-backed air gestures. Camera is active only while this page is visible. */
 class GestureFragment : Fragment(), HandTrackingManager.Listener {
 
     private var _b: FragmentGestureBinding? = null
@@ -27,66 +23,86 @@ class GestureFragment : Fragment(), HandTrackingManager.Listener {
     private var manager: HandTrackingManager? = null
     private var started = false
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, s: Bundle?): View {
+    private val cameraPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted && isResumed) tryStart()
+        else if (!granted) showCameraPermissionRequired()
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         _b = FragmentGestureBinding.inflate(inflater, container, false)
         return b.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.btnEnableCamera.setOnClickListener {
-            ActivityCompat.requestPermissions(requireActivity(),
-                arrayOf(Manifest.permission.CAMERA), REQ_CAMERA)
+            cameraPermission.launch(Manifest.permission.CAMERA)
         }
+        showCameraPermissionRequired()
+    }
+
+    override fun onResume() {
+        super.onResume()
         tryStart()
     }
 
+    override fun onPause() {
+        stopTracking()
+        super.onPause()
+    }
+
+    private fun showCameraPermissionRequired() {
+        val binding = _b ?: return
+        binding.gestureStatus.text = "CAMERA PERMISSION REQUIRED FOR AIR GESTURES"
+        binding.btnEnableCamera.visibility = View.VISIBLE
+    }
+
     private fun tryStart() {
+        val binding = _b ?: return
         val ctx = context ?: return
+        if (!isResumed || started) return
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED) {
-            b.gestureStatus.text = "CAMERA PERMISSION REQUIRED FOR AIR GESTURES"
-            b.btnEnableCamera.visibility = View.VISIBLE
+            showCameraPermissionRequired()
             return
         }
-        b.btnEnableCamera.visibility = View.GONE
-        if (started) return
+        binding.btnEnableCamera.visibility = View.GONE
         started = true
-        manager = HandTrackingManager(ctx, this).also { it.start(b.previewView, viewLifecycleOwner) }
+        manager = HandTrackingManager(ctx, this).also {
+            it.start(binding.previewView, viewLifecycleOwner)
+        }
+    }
+
+    private fun stopTracking() {
+        manager?.stop()
+        manager = null
+        started = false
     }
 
     override fun onGesture(gesture: String) {
-        b.gestureStatus.text = "GESTURE DETECTED: $gesture"
+        val binding = _b ?: return
+        binding.gestureStatus.text = "GESTURE DETECTED: $gesture"
         val activity = activity as? MainActivity ?: return
         val pager = activity.findViewById<androidx.viewpager2.widget.ViewPager2>(
             com.neoplusair.neo.R.id.viewPager)
         when (gesture) {
             "SWIPE_RIGHT" -> pager.setCurrentItem((pager.currentItem + 1).coerceAtMost(2), true)
             "SWIPE_LEFT" -> pager.setCurrentItem((pager.currentItem - 1).coerceAtLeast(0), true)
-            "PINCH" -> activity.toggleListening()          // pinch to select / activate voice
+            "PINCH" -> activity.toggleListening()
             "OPEN_PALM" -> activity.speak("Gesture link active, sir.")
-            "EXPAND" -> activity.startMonitoringOverlay()  // spread hands -> holo panel
+            "EXPAND" -> activity.startMonitoringOverlay()
             "MINIMIZE" -> context?.stopService(Intent(context, FloatingPanelService::class.java))
         }
     }
 
     override fun onUnavailable(reason: String) {
-        b.gestureStatus.text = reason
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        if (requestCode == REQ_CAMERA && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            started = false
-            tryStart()
-        }
+        _b?.gestureStatus?.text = reason
     }
 
     override fun onDestroyView() {
-        manager?.stop(); manager = null; started = false
-        super.onDestroyView(); _b = null
+        stopTracking()
+        _b = null
+        super.onDestroyView()
     }
-
-    companion object { private const val REQ_CAMERA = 43 }
 }

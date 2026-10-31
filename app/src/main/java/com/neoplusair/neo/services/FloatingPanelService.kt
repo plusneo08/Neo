@@ -40,11 +40,20 @@ class FloatingPanelService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (overlayView != null) return START_STICKY
-        showOverlay()
-        startForeground(NOTIF_ID, buildNotification())
-        handler.post(loop)
-        return START_STICKY
+        if (overlayView != null) return START_NOT_STICKY
+        return try {
+            // Android requires foreground promotion promptly after a service start.
+            startForeground(NOTIF_ID, buildNotification())
+            showOverlay()
+            handler.post(loop)
+            START_NOT_STICKY
+        } catch (error: SecurityException) {
+            stopSelf(startId)
+            START_NOT_STICKY
+        } catch (error: WindowManager.BadTokenException) {
+            stopSelf(startId)
+            START_NOT_STICKY
+        }
     }
 
     private fun showOverlay() {
@@ -112,7 +121,9 @@ class FloatingPanelService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(loop)
-        overlayView?.let { windowManager.removeView(it) }
+        overlayView?.let {
+            try { windowManager.removeView(it) } catch (_: IllegalArgumentException) { }
+        }
         overlayView = null; binding = null
         super.onDestroy()
     }

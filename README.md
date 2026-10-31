@@ -6,6 +6,8 @@ air-gesture control (MediaPipe), a voice assistant, an application
 launcher, live system telemetry, and a floating holographic panel.
 
 Pure **Kotlin**, minSdk 26, targetSdk 34, APK-ready Gradle config.
+The project is configured for Android 14 (API 34); air gestures require the
+separately downloaded MediaPipe model described below.
 
 ---------------------------------------------------------------------
 
@@ -40,18 +42,25 @@ Pure **Kotlin**, minSdk 26, targetSdk 34, APK-ready Gradle config.
 
 ## 2. BUILD
 
-Option A — Android Studio (recommended):
-    1. Open the NEO_PLUS_AIR folder in Android Studio (Hedgehog+).
-    2. Let Gradle sync. The wrapper jar is generated automatically by
-       Android Studio; if you use the CLI first, run:
-           gradle wrapper --gradle-version 8.7
-    3. Download the hand model (section 3) — optional but required for
-       air gestures.
-    4. Run on a device (min Android 8.0), or Build > Generate Signed APK.
+Option A — GitHub Actions (recommended if you do not have Android Studio):
+    1. Push this project to your GitHub repository.
+    2. Open the repository's Actions tab.
+    3. Run "Android APK Build" (or push to main/master).
+    4. Open the completed workflow run and download the
+       NEO-PLUS-AIR-debug-apk artifact.
 
-Option B — command line:
-    ./gradlew assembleDebug          (after generating the wrapper)
-Output: app/build/outputs/apk/debug/app-debug.apk
+The project archive includes Gradle configuration but does not include the
+Gradle wrapper JAR/scripts. The included GitHub Actions workflow installs
+Gradle 8.7 and builds the APK without relying on a missing wrapper.
+
+Option B — Android Studio:
+    1. Open the NEO_PLUS_AIR folder in Android Studio (Hedgehog+).
+    2. Allow Gradle 8.7 and Android SDK 34 components to install/sync.
+    3. Select Build > Build Bundle(s) / APK(s) > Build APK(s).
+    4. The debug APK is written to app/build/outputs/apk/debug/app-debug.apk.
+
+A local command-line build requires Gradle 8.7 and Android SDK 34 installed:
+    gradle --no-daemon :app:assembleDebug
 
 ---------------------------------------------------------------------
 
