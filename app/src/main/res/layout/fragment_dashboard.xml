@@ -1,0 +1,70 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <com.neoplusair.neo.ui.HoloDashboardView
+        android:id="@+id/holo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/txtStats"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp"
+        android:textColor="@color/holo_blue"
+        android:fontFamily="monospace"
+        android:textSize="12sp"
+        android:text="INITIALIZING…" />
+
+    <TextView
+        android:id="@+id/txtAr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:textColor="@color/holo_dim"
+        android:fontFamily="monospace"
+        android:textSize="10sp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnVoice"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/btn_holo"
+            android:textColor="@color/holo_blue"
+            android:fontFamily="monospace"
+            android:text="◉ VOICE LINK" />
+
+        <Button
+            android:id="@+id/btnOverlay"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/btn_holo"
+            android:textColor="@color/holo_blue"
+            android:fontFamily="monospace"
+            android:text="⬡ HOLO PANEL" />
+
+        <Button
+            android:id="@+id/btnSettings"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/btn_holo"
+            android:textColor="@color/holo_blue"
+            android:fontFamily="monospace"
+            android:text="⚙ SYSTEM SETTINGS" />
+    </LinearLayout>
+</FrameLayout>

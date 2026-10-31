@@ -1,0 +1,31 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="340dp"
+    android:background="#2200E5FF">
+
+    <com.neoplusair.neo.ui.HoloDashboardView
+        android:id="@+id/holoOverlay"
+        android:layout_width="300dp"
+        android:layout_height="300dp" />
+
+    <Button
+        android:id="@+id/btnCloseOverlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:background="@android:color/transparent"
+        android:text="✕"
+        android:textColor="@color/holo_blue"
+        android:textSize="18sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:text="@string/drag_hint"
+        android:textColor="@color/holo_dim"
+        android:fontFamily="monospace"
+        android:textSize="10sp" />
+</FrameLayout>

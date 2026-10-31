@@ -1,0 +1,13 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NEO PLUS AIR</string>
+    <string name="tab_dashboard">DASHBOARD</string>
+    <string name="tab_apps">APPLICATIONS</string>
+    <string name="tab_gesture">GESTURE</string>
+    <string name="mic_idle">VOICE LINK STANDBY</string>
+    <string name="mic_listening">LISTENING — speak now</string>
+    <string name="mic_processing">PROCESSING COMMAND</string>
+    <string name="accessibility_desc">NEO PLUS AIR uses this service only to perform system navigation actions (back / home / recent apps) when you explicitly command it. No data is collected or observed.</string>
+    <string name="drag_hint">◈ DRAG TO MOVE ◈</string>
+</resources>

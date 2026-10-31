@@ -1,0 +1,9 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="holo_blue">#00E5FF</color>
+    <color name="holo_cyan">#2979FF</color>
+    <color name="holo_dim">#0A2540</color>
+    <color name="holo_bg">#000000</color>
+    <color name="holo_text">#B3E5FC</color>
+</resources>
